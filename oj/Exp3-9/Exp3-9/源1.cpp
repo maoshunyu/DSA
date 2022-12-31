@@ -8,16 +8,15 @@ struct f {
 	u16 food;
 	int value;
 	int no;
-
 };
 struct le {
 	bool operator()(const f& a, const f& b) {
-		return a.value > b.value;
+		return a.value < b.value ? true : false;
 	}
-}le;
+}le ;
 struct gr {
 	bool operator()(const f& a, const f& b) {
-		return a.no < b.no;
+		return a.no < b.no ? true : false;
 	}
 }gr;
 u16 recipe = 0;
@@ -26,11 +25,21 @@ int get_value(u16 food) {
 	int count = 0;
 	food = food & recipe;
 	for (int i = 0; i < 16; i++) {
-		if (((food >> i) & 1) == 1)  count++;
+		if (((food >> i) & 1) == 1)  count++; 
 	}
 	return count;
 }
-
+int find_max(){
+    f max=foods[0];
+    int index=0;
+    for(int i=0;i<foods.size();i++){
+        if(foods[i].value>=max.value){
+            max=foods[i];
+            index=i;
+        }
+    }
+    return index;
+}
 
 int main() {
 	int n, m;
@@ -57,41 +66,27 @@ int main() {
 		foods[i].value = get_value(foods[i].food);
 	}
 	delete[] temp;
-	sort(foods.begin(), foods.end(), le);
+	
 	vector<f> res;
+    int index=find_max();
 	while (1) {
 		if (recipe == 0)break;
-		if (foods.size() == 0 || foods[0].value == 0) {
+		if (foods.size() == 0 || foods[index].value == 0) {
 			cout << "-1";
 			return 0;
 		}
-		res.push_back(foods[0]);
-		recipe = (foods[0].food & recipe) ^ recipe;
-		foods.erase(foods.begin());
+		res.push_back(foods[index]);
+		recipe = (foods[index].food & recipe) ^ recipe;
+		foods.erase(foods.begin()+index);
 		for (auto it = foods.begin(); it != foods.end(); it++) {
 			it->value = get_value(it->food);
 		}
-		sort(foods.begin(), foods.end(), le);
+		index=find_max();
 	}
-	recipe = recipe_c;
 
-	for (auto it = res.begin(); it != res.end();) {
-		u16 t = 0;
-		for (auto jt = res.begin(); jt != res.end(); jt++) {
-			if (jt == it)continue;
-			t |= jt->food;
-		}
-		if (((t & recipe) ^ recipe) == 0) {
-			it=res.erase(it);
-		}
-		else {
-			it++;
-		}
-	}
-	
-	
-	sort(res.begin(), res.end(), gr);
-	for (int i = 0; i < res.size(); i++) {
+	sort(res.begin(), res.end(),gr);
+	for (int i=0; i<res.size()-1; i++) {
 		cout << res[i].no << " ";
 	}
+	cout << res[res.size() - 1].no;
 }
