@@ -6,21 +6,20 @@
 #include <vector>
 using namespace std;
 
-typedef struct Point {
-    int x;
-    int y;
-    int dir; // 1 2 3 4
-    bool operator==(Point &rhs) {
-        return x == rhs.x && y == rhs.y && dir == rhs.dir;
-    }
+struct Point {
+    short x;
+    short y;
+    char dir; // 1 2 3 4
+
 };
-typedef bitset<2> bit2;
 
 int lx = 0, ly = 0;
 const int N = 250000;
-bitset<N * 4> map, vis;
-bit2 pre[N * 4];
-stack<bit2> road;
+bitset<N * 4> vis;
+bitset<N> map;
+bitset<N*4> preL;
+bitset<N * 4> preU;
+stack<short> road;
 /*
 00  ->  F
 01  ->  F2
@@ -36,11 +35,10 @@ void bfs(Point a, Point b) {
     while (!q.empty()) {
         Point t = q.front();
         q.pop();
-        if (t == b)
-            break;
-        vector<int> v({1, 0, 3, 2});
 
-        for (auto &&i : v) {
+        vector<int> v({ 1, 0, 3, 2 });
+
+        for (auto&& i : v) {
             short nx = t.x, ny = t.y;
             char nz = t.dir;
             switch (i) {
@@ -90,36 +88,42 @@ void bfs(Point a, Point b) {
                 break;
             }
             if (nx >= 0 && nx < lx && ny >= 0 && ny < ly &&
-                map[(nz - 1) * lx * ly + ny * lx + nx] == 0 &&
+                map[ny * lx + nx] == 0 &&
                 vis[(nz - 1) * lx * ly + ny * lx + nx] == 0) {
                 if (i != 1) {
-                    pre[(nz - 1) * lx * ly + ny * lx + nx] = i;
+                    preL[(nz - 1) * lx * ly + ny * lx + nx] = i&1;
+                    preU[(nz - 1) * lx * ly + ny * lx + nx] = i >>1 & 1;
                     vis[(nz - 1) * lx * ly + ny * lx + nx] = 1;
-                    q.push({nx, ny, nz});
-                } else {
+                    q.push({ nx, ny, nz });
+                }
+                else {
                     if (((nx - t.x == 2) &&
-                         map[(nz - 1) * lx * ly + ny * lx + nx - 1] == 0) ||
+                        map[ny * lx + nx - 1] == 0) ||
                         ((nx - t.x == -2) &&
-                         map[(nz - 1) * lx * ly + ny * lx + nx + 1] == 0) ||
+                            map[ny * lx + nx + 1] == 0) ||
                         ((ny - t.y == 2) &&
-                         map[(nz - 1) * lx * ly + (ny - 1) * lx + nx] == 0) ||
+                            map[(ny - 1) * lx + nx] == 0) ||
                         ((ny - t.y == -2) &&
-                         map[(nz - 1) * lx * ly + (ny + 1) * lx + nx] == 0)) {
-                        pre[(nz - 1) * lx * ly + ny * lx + nx] = i;
+                            map[(ny + 1) * lx + nx] == 0)) {
+                        preL[(nz - 1) * lx * ly + ny * lx + nx] = i & 1;
+                        preU[(nz - 1) * lx * ly + ny * lx + nx] = i >> 1 & 1;
                         vis[(nz - 1) * lx * ly + ny * lx + nx] = 1;
-                        q.push({nx, ny, nz});
+                        q.push({ nx, ny, nz });
                     }
                 }
             }
         }
+
     }
-    int x = b.x, y = b.y, z = b.dir;
+    short x = b.x, y = b.y;
+    char z = b.dir;
     while (x >= 0 || y >= 0 || (z >= 1 && z <= 4)) {
         if (x == a.x && y == a.y && z == a.dir)
             break;
-        bit2 d = pre[(z - 1) * lx * ly + y * lx + x];
-        road.push(d);
-        switch (d[0] + d[1] * 2) {
+        short d0 = preL[(z - 1) * lx * ly + y * lx + x];
+        short d1 = preU[(z - 1) * lx * ly + y * lx + x];
+        road.push(d0+d1*2);
+        switch (d0 + d1 * 2) {
         case 0:
             switch (z) {
             case 1:
@@ -167,7 +171,8 @@ void bfs(Point a, Point b) {
             break;
         }
     }
-    memset(pre, 0, sizeof(bit2) * 4 * N);
+    preL.reset();
+    preU.reset();
     vis.reset();
 }
 int main() {
@@ -178,16 +183,37 @@ int main() {
         for (int i = 0; i < lx; i++) {
             int t;
             cin >> t;
-            for (int k = 0; k < 4; k++) {
-                map[k * lx * ly + j * lx + i] = t;
-            }
+            map[j * lx + i] = t;
         }
     }
-
-    cin >> start.x >> start.y >> start.dir;
-    cin >> mid.x >> mid.y >> mid.dir;
-    cin >> endp.x >> endp.y >> endp.dir;
+    char t;
+    cin >> start.x >> start.y >> t;
+    start.dir = t - 48;
+    cin >> mid.x >> mid.y >> t;
+    mid.dir = t - 48;
+    cin >> endp.x >> endp.y >> t;
+    endp.dir = t - 48;
     bfs(mid, endp);
     bfs(start, mid);
     cout << road.size() << endl;
+    while (!road.empty()) {
+        auto s = road.top();
+        switch (s) {
+        case 0:
+            cout << "F" << endl;
+            break;
+        case 1:
+            cout << "F2" << endl;
+            break;
+        case 2:
+            cout << "L" << endl;
+            break;
+        case 3:
+            cout << "R" << endl;
+            break;
+        }
+        road.pop();
+
+    }
+
 }
