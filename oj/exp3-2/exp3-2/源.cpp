@@ -2,7 +2,7 @@
 #pragma warning(disable:4996)
 #include <string.h>
 using namespace std;
-typedef struct info {
+struct info {
 	char data[5];
 	long pos;
 };
